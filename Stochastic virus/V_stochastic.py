@@ -1,9 +1,11 @@
-import pandas as pd
 import matplotlib.pyplot as plt
-import seaborn as sns
-from tqdm import tqdm
 import plotly.express as px
+
+from pandas import DataFrame
+from seaborn import scatterplot
+from tqdm import tqdm
 from population_class import Population
+
 
 sns.set_theme(style='white')
 
