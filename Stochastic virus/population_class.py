@@ -9,7 +9,6 @@ from pandas import DataFrame
 import plotly.express as px
 
 
-
 def color_f(state):
     if state == 'S':
         return 0
@@ -22,7 +21,7 @@ def color_f(state):
 class Population:
 
     def __init__(self, N, I0, box, step_size=0.05, r_infec=0.05, p_infec=0.1, infection_time=100, p_market=0.002
-                 , tmax_market=4, incubation_time=25, rnd_starting_infection_time=False, market=False):
+                 , tmax_market=4, incubation_time=25, walk_type='rand_walk', rnd_starting_infection_time=False):
 
         # Simulation parameters
 
@@ -47,7 +46,7 @@ class Population:
 
         # Special features
         self.rnd_starting_infection_time = rnd_starting_infection_time
-        self.market = market
+        self.walk_type = walk_type
 
         # setup
         self.pop = self.populate()
@@ -68,7 +67,7 @@ class Population:
         for person in pop:
             if self.rnd_starting_infection_time:
                 if count < self.I0:
-                    person.t = rnd.randint(0, self.i)
+                    person.t = rnd.randint(0, self.infection_time)
                     person.est = 'I'
                     person.t = self.incubation_time
                     count += 1
@@ -87,10 +86,15 @@ class Population:
         self.In = np.append(self.In, 0)
 
         for person in self.pop:
-            if self.market:
-                person.walk_market()
-            else:
+            if self.walk_type == 'market_walk':
+                person.market_walk()
+            elif self.walk_type == 'rand_walk':
                 person.rand_walk()
+            elif self.walk_type == 'bounce_walk':
+                person.bounce_walk()
+            else:
+                raise ValueError(
+                    'walk_type should be one of the supported classes : rand_walk, market_walk, bounce_walk')
             if person.est == 'S':
                 for other_person in self.pop:
                     if person.est != 'S':
@@ -118,7 +122,7 @@ class Population:
     def scatter_animation(self, interval):
         fig = plt.figure()
         ax = plt.axes(xlim=(-self.box, self.box), ylim=(-self.box, self.box))
-        ax.legend(['S','I','R'], bbox_to_anchor=(1.1, 1.05))
+        # ax.legend(['S','I','R'], bbox_to_anchor=(1.1, 1.05))
         scat = ax.scatter([], [])
 
         def update(i):
@@ -126,7 +130,7 @@ class Population:
             scat.set_array(np.array([color_f(person.est) for person in self.pop]))
             self.be()
 
-        amin = FuncAnimation(fig, func=update, interval=interval)
+        anim = FuncAnimation(fig, func=update, interval=interval)
         plt.show()
 
     def final_state(self):
