@@ -1,5 +1,5 @@
 import random as rnd
-
+from math import sin, cos, pi
 
 def rnd_sign():
     return 1 if rnd.random() < 0.5 else -1
@@ -15,6 +15,7 @@ class Indv:
         # Coordenadas iniciales
         self.x = self.box * (2 * rnd.random() - 1)
         self.y = self.box * (2 * rnd.random() - 1)
+        self.theta = 2 * pi * rnd.random()
 
         self.step_size = step_size  # Tamaño del paso
         self.r_infec = r_infec  # Radio de infeccion
@@ -36,16 +37,15 @@ class Indv:
             self.t += 1  # Contador de tiempo infectado
         if self.t == self.infection_incubation_time:
             self.est = 'R'  # El individuo se cura
-        random_sign_x = rnd_sign()
-        random_sign_y = rnd_sign()
-        self.x += self.step_size * random_sign_x
-        self.y += self.step_size * random_sign_y
+        random_theta = rnd.random() * pi *2
+        self.x += self.step_size * cos(random_theta)
+        self.y += self.step_size * sin(random_theta)
         if abs(self.x) >= self.box:
-            self.x += 2 * self.step_size * (- 1 * random_sign_x)
+            self.x += -2 * self.step_size * cos(random_theta)
         if abs(self.y) >= self.box:
-            self.y += 2 * self.step_size * (- 1 * random_sign_y)
+            self.y += -2 * self.step_size * sin(random_theta)
 
-    def walk_market(self):  # Caminata aleatoria pero existe la probabilidad de que
+    def market_walk(self):  # Caminata aleatoria pero existe la probabilidad de que
         # el individuo visite un "mercado", que es un foco de infeccion
         if rnd.random() <= self.p_market and self.t_market == 0:
             self.xcp, self.ycp = self.x, self.y
@@ -61,11 +61,26 @@ class Indv:
                 self.t += 1
             if self.t == self.infection_incubation_time:
                 self.est = 'R'
-            random_sign_x = rnd_sign()
-            random_sign_y = rnd_sign()
-            self.x += self.step_size * random_sign_x
-            self.y += self.step_size * random_sign_y
+            random_theta = rnd.random() * pi * 2
+            self.x += self.step_size * cos(random_theta)
+            self.y += self.step_size * sin(random_theta)
             if abs(self.x) >= self.box:
-                self.x += 2 * self.step_size * (- 1 * random_sign_x)
+                self.x += -2 * self.step_size * cos(random_theta)
             if abs(self.y) >= self.box:
-                self.y += 2 * self.step_size * (- 1 * random_sign_y)
+                self.y += -2 * self.step_size * cos(random_theta)
+
+    def bounce_walk(self):
+        if self.est == 'I':
+            self.t += 1  # Contador de tiempo infectado
+        if self.t == self.infection_incubation_time:
+            self.est = 'R'  # El individuo se cura
+        self.x += self.step_size * cos(self.theta)
+        self.y += self.step_size * sin(self.theta)
+        if abs(self.x) >= self.box:
+            self.theta = pi - self.theta
+            self.x += self.step_size * cos(self.theta)
+            self.y += self.step_size * sin(self.theta)
+        if abs(self.y) >= self.box:
+            self.theta = - self.theta
+            self.x += self.step_size * cos(self.theta)
+            self.y += self.step_size * sin(self.theta)
