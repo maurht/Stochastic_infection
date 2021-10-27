@@ -19,7 +19,7 @@ def color_f(state):
 class Population:
 
     def __init__(self, N: int, I0: int, box: float, market_size: float, step_size=0.05, r_infec=0.05, p_infec=0.1,
-                 infection_time=100,
+                 infection_time=100, market=True,
                  p_market=0.002, tmax_market=4, incubation_time=25, walk_type='rand_bounce_walk',
                  rnd_starting_infection_time=False):
 
@@ -47,7 +47,16 @@ class Population:
 
         # Opciones especiales
         self.rnd_starting_infection_time = rnd_starting_infection_time
+        self.market = market
+
+        if walk_type not in ['rand_bounce', 'linear_bounce', 'rand_toroid',
+                             'linear_toroid', 'none']:
+            raise ValueError(
+                'Incorrect walk_type input.walk_type should be one of the supported classes : rand_bounce, '
+                'rand_bounce_market, linear_bounce, linear_bounce_market, rand_toroid, linear_toroid, none')
+
         self.walk_type = walk_type
+
 
         # setup
         self.pop = self.populate
@@ -61,8 +70,7 @@ class Population:
                     infection_time=self.infection_time,
                     tmax_market=self.tmax_market,
                     incubation_time=self.incubation_time,
-                    walk_type=self.walk_type,
-                    market_size=self.market_size) for i in range(self.N)]
+                    market_size=self.market_size) for _ in range(self.N)]
 
         # Asignacion de estatus I a I_O personas
         count = 0
@@ -90,7 +98,11 @@ class Population:
 
         # tipo de caminata elegido
         for person in self.pop:
-            person.walk()
+            if self.market:
+                person.go_to_market()
+
+            exec('person.' + self.walk_type + '()')
+
             ''' Proceso de infeccion. Por pasos: checamos si la persona es suceptible, luego tomamos a todos los
             infectados que se mantienen al principio de self.pop por el .sort() que se usa cada vez que hay un
             infectado, checamos si esa persona esta infectada (esto se hace en el caso de que el numero de infectados
@@ -127,8 +139,8 @@ class Population:
         fig = plt.figure()
         ax = plt.axes(xlim=(-self.box, self.box), ylim=(-self.box, self.box))
         if gradient:
-            scat = ax.scatter([self.box * 2, self.box * 3], [self.box * 2, self.box * 3], c=[0, self.infection_time],
-                              alpha=0.5)
+            scat = ax.scatter([self.box * 2, self.box * 3], [self.box * 2, self.box * 3], c=[0, self.infection_time+self.incubation_time],
+                              alpha=alpha)
         else:
             scat = ax.scatter([], [], alpha=alpha)
 
@@ -149,8 +161,7 @@ class Population:
             scatterplot(data=p, x='X', y='Y', hue='Infection time', palette=palette)
         else:
             p[['X', 'Y', 'State']] = [[person.x, person.y, person.est] for person in self.pop]
-            scatterplot(data=p, x='X', y='Y', hue='State', palette='magma')
-
+            scatterplot(data=p, x='X', y='Y', hue='State', palette=palette)
 
         plt.legend(bbox_to_anchor=(1.05, 0.5))
         plt.xlim([-self.box, self.box])
